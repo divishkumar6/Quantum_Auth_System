@@ -1,177 +1,424 @@
-from flask import Flask, request, jsonify
-import os
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+import os
 
-from crypto.pqc import PQC
-from blockchain.chain import Blockchain
-from storage.db import init_db, add_user, get_user
+try:
+    from backend.blockchain.chain import Blockchain
+    from backend.crypto.pqc import PQC
+    from backend.storage.db import add_user, get_user, init_db
+except ImportError:
+    from blockchain.chain import Blockchain
+    from crypto.pqc import PQC
+    from storage.db import add_user, get_user, init_db
+
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize components
 blockchain = Blockchain()
 challenges = {}
-
-# Store secret_key temporarily in memory for verification
-# Key: username, Value: secret_key
 users_secret = {}
 
 init_db()
 
-# -----------------------------
-# REGISTER
-# -----------------------------
-@app.route('/register', methods=['POST'])
+
+def normalize_username(value):
+    return (value or "").strip()
+
+
+def get_public_key_from_chain(username):
+    for block in reversed(blockchain.chain):
+        data = block.data if isinstance(block.data, dict) else None
+        if data and data.get("username") == username:
+            return data.get("public_key")
+    return None
+
+
+def response_payload(
+    *,
+    result,
+    status_code,
+    message=None,
+    error=None,
+    challenge=None,
+    signature=None,
+    public_key=None,
+    username=None,
+    extra=None,
+):
+    payload = {
+        "result": result,
+        "status_code": status_code,
+        "message": message,
+        "error": error,
+        "username": username,
+        "challenge": challenge,
+        "signature": signature,
+        "public_key": public_key,
+    }
+    if extra:
+        payload.update(extra)
+    return payload
+
+
+@app.route("/register", methods=["POST"])
 def register():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    username = normalize_username(data.get("username"))
+    name = (data.get("name") or "").strip()
+    gender = (data.get("gender") or "").strip()
+    mobile = (data.get("mobile") or "").strip()
 
-    username = data.get("username")
-    name = data.get("name")
-    gender = data.get("gender")
-    mobile = data.get("mobile")
-
-    if not username:
-        return jsonify({"error": "Username required"}), 400
+    missing = [
+        field
+        for field, value in {
+            "username": username,
+            "name": name,
+            "gender": gender,
+            "mobile": mobile,
+        }.items()
+        if not value
+    ]
+    if missing:
+        status_code = 400
+        return (
+            jsonify(
+                response_payload(
+                    result="REGISTER_FAILED",
+                    status_code=status_code,
+                    error=f"Missing required fields: {', '.join(missing)}",
+                    username=username or None,
+                )
+            ),
+            status_code,
+        )
 
     if get_user(username):
-        return jsonify({"error": "User already exists"}), 400
+        public_key = get_public_key_from_chain(username)
+        status_code = 409
+        return (
+            jsonify(
+                response_payload(
+                    result="USER_EXISTS",
+                    status_code=status_code,
+                    error="User already exists",
+                    username=username,
+                    public_key=public_key,
+                )
+            ),
+            status_code,
+        )
 
-    # Generate keypair
     public_key, secret_key = PQC.generate_keys()
 
-    # Store secret_key temporarily in memory for verification
+    if not add_user(username, name, gender, mobile):
+        status_code = 500
+        return (
+            jsonify(
+                response_payload(
+                    result="REGISTER_FAILED",
+                    status_code=status_code,
+                    error="Database error while creating the user",
+                    username=username,
+                    public_key=public_key,
+                )
+            ),
+            status_code,
+        )
+
+    blockchain.add_block({"username": username, "public_key": public_key})
     users_secret[username] = secret_key
+    challenges.pop(username, None)
 
-    # Add public key to blockchain
-    blockchain.add_block({
-        "username": username,
-        "public_key": public_key
-    })
-
-    # Add user to database
-    success = add_user(username, name, gender, mobile)
-
-    if not success:
-        return jsonify({"error": "Database error"}), 500
-
-    return jsonify({
-        "message": "User registered",
-        "secret_key": secret_key,
-        "public_key": public_key
-    })
+    status_code = 201
+    return (
+        jsonify(
+            response_payload(
+                result="REGISTERED",
+                status_code=status_code,
+                message="User registered successfully",
+                username=username,
+                public_key=public_key,
+                extra={"secret_key": secret_key},
+            )
+        ),
+        status_code,
+    )
 
 
-# -----------------------------
-# LOGIN (GET CHALLENGE)
-# -----------------------------
-@app.route('/login', methods=['POST'])
+@app.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()
-    username = data.get("username")
+    data = request.get_json(silent=True) or {}
+    username = normalize_username(data.get("username"))
+
+    if not username:
+        status_code = 400
+        return (
+            jsonify(
+                response_payload(
+                    result="LOGIN_FAILED",
+                    status_code=status_code,
+                    error="Username required",
+                )
+            ),
+            status_code,
+        )
 
     if not get_user(username):
-        return jsonify({"error": "User not found"}), 404
+        status_code = 404
+        return (
+            jsonify(
+                response_payload(
+                    result="USER_NOT_FOUND",
+                    status_code=status_code,
+                    error="User not found",
+                    username=username,
+                )
+            ),
+            status_code,
+        )
 
-    # Generate a random challenge
-    challenge = os.urandom(8).hex()
+    public_key = get_public_key_from_chain(username)
+    if not public_key:
+        status_code = 404
+        return (
+            jsonify(
+                response_payload(
+                    result="LOGIN_FAILED",
+                    status_code=status_code,
+                    error="Public key not found on blockchain",
+                    username=username,
+                )
+            ),
+            status_code,
+        )
+
+    challenge = os.urandom(16).hex()
     challenges[username] = challenge
 
-    return jsonify({
-        "challenge": challenge
-    })
+    status_code = 200
+    return (
+        jsonify(
+            response_payload(
+                result="CHALLENGE_CREATED",
+                status_code=status_code,
+                message="Challenge generated",
+                username=username,
+                challenge=challenge,
+                public_key=public_key,
+            )
+        ),
+        status_code,
+    )
 
 
-# -----------------------------
-# VERIFY
-# -----------------------------
-@app.route('/verify', methods=['POST'])
+@app.route("/verify", methods=["POST"])
 def verify_user():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    username = normalize_username(data.get("username"))
+    message = data.get("message") or ""
+    signature = data.get("signature") or ""
 
-    username = data.get("username")
-    message = data.get("message")
-    signature = data.get("signature")
+    if not username:
+        status_code = 400
+        return (
+            jsonify(
+                response_payload(
+                    result="VERIFY_FAILED",
+                    status_code=status_code,
+                    error="Username required",
+                    signature=signature or None,
+                )
+            ),
+            status_code,
+        )
 
-    # Check if challenge exists (prevents replay attack)
-    if username not in challenges:
-        return jsonify({"error": "Challenge expired or not found"}), 400
+    if not get_user(username):
+        status_code = 404
+        return (
+            jsonify(
+                response_payload(
+                    result="USER_NOT_FOUND",
+                    status_code=status_code,
+                    error="User not found",
+                    username=username,
+                    signature=signature or None,
+                )
+            ),
+            status_code,
+        )
 
-    challenge = challenges[username]
-
-    # Check if message was tampered (must match challenge exactly)
-    if message != challenge:
-        return jsonify({"error": "Tampered message"}), 400
-
-    # Get stored secret_key for this user
-    if username not in users_secret:
-        return jsonify({"error": "Secret key not found. Please register again."}), 400
-
-    stored_secret_key = users_secret[username]
-
-    # Get public_key from blockchain
-    public_key = None
-    for block in blockchain.chain:
-        if isinstance(block.data, dict):
-            if block.data.get("username") == username:
-                public_key = block.data.get("public_key")
-
+    public_key = get_public_key_from_chain(username)
     if not public_key:
-        return jsonify({"error": "Public key not found"}), 404
+        status_code = 404
+        return (
+            jsonify(
+                response_payload(
+                    result="VERIFY_FAILED",
+                    status_code=status_code,
+                    error="Public key not found on blockchain",
+                    username=username,
+                    signature=signature or None,
+                )
+            ),
+            status_code,
+        )
 
-    # Compute expected signature: SHA256(message + secret_key)
+    challenge = challenges.get(username)
+    if not challenge:
+        status_code = 400
+        return (
+            jsonify(
+                response_payload(
+                    result="CHALLENGE_MISSING",
+                    status_code=status_code,
+                    error="Challenge expired or not found",
+                    username=username,
+                    signature=signature or None,
+                    public_key=public_key,
+                )
+            ),
+            status_code,
+        )
+
+    stored_secret_key = users_secret.get(username)
+    if not stored_secret_key:
+        challenges.pop(username, None)
+        status_code = 409
+        return (
+            jsonify(
+                response_payload(
+                    result="VERIFY_FAILED",
+                    status_code=status_code,
+                    error="Secret key not found in memory. Please register again.",
+                    username=username,
+                    challenge=challenge,
+                    signature=signature or None,
+                    public_key=public_key,
+                )
+            ),
+            status_code,
+        )
+
+    if message != challenge:
+        challenges.pop(username, None)
+        status_code = 400
+        return (
+            jsonify(
+                response_payload(
+                    result="TAMPERED_MESSAGE",
+                    status_code=status_code,
+                    error="Tampered message detected",
+                    username=username,
+                    challenge=challenge,
+                    signature=signature or None,
+                    public_key=public_key,
+                )
+            ),
+            status_code,
+        )
+
+    derived_public_key = PQC.derive_public_key(stored_secret_key)
+    if derived_public_key != public_key:
+        challenges.pop(username, None)
+        status_code = 409
+        return (
+            jsonify(
+                response_payload(
+                    result="VERIFY_FAILED",
+                    status_code=status_code,
+                    error="Stored secret key does not match blockchain public key",
+                    username=username,
+                    challenge=challenge,
+                    signature=signature or None,
+                    public_key=public_key,
+                    extra={"derived_public_key": derived_public_key},
+                )
+            ),
+            status_code,
+        )
+
     expected_signature = PQC.sign(message, stored_secret_key)
-
-    # Verify: compare signatures
-    is_valid = (signature == expected_signature)
-
-    # Delete challenge after verification to prevent replay attacks
-    del challenges[username]
+    is_valid = PQC.verify(
+        message,
+        signature,
+        secret_key=stored_secret_key,
+        public_key=public_key,
+    )
+    challenges.pop(username, None)
 
     if is_valid:
-        return jsonify({
-            "message": "✅ Authentication successful",
-            "debug": {
-                "challenge": message,
-                "signature": signature,
-                "public_key": public_key,
-                "expected_signature": expected_signature,
-                "result": "VALID"
-            }
-        })
-    else:
-        return jsonify({
-            "error": "❌ Authentication failed",
-            "debug": {
-                "challenge": message,
-                "signature": signature,
-                "public_key": public_key,
-                "expected_signature": expected_signature,
-                "result": "INVALID"
-            }
-        }), 401
+        status_code = 200
+        return (
+            jsonify(
+                response_payload(
+                    result="VALID",
+                    status_code=status_code,
+                    message="Authentication successful",
+                    username=username,
+                    challenge=message,
+                    signature=signature,
+                    public_key=public_key,
+                    extra={"expected_signature": expected_signature},
+                )
+            ),
+            status_code,
+        )
+
+    status_code = 401
+    return (
+        jsonify(
+            response_payload(
+                result="INVALID",
+                status_code=status_code,
+                error="Authentication failed",
+                username=username,
+                challenge=message,
+                signature=signature,
+                public_key=public_key,
+                extra={"expected_signature": expected_signature},
+            )
+        ),
+        status_code,
+    )
 
 
-# -----------------------------
-# BLOCKCHAIN STATUS (FOR DEMO)
-# -----------------------------
-@app.route('/blockchain', methods=['GET'])
+@app.route("/blockchain", methods=["GET"])
 def get_chain():
-    chain_data = []
-
-    for block in blockchain.chain:
-        chain_data.append({
+    chain_data = [
+        {
             "index": block.index,
+            "timestamp": block.timestamp,
             "data": block.data,
             "hash": block.hash,
-            "prev_hash": block.prev_hash
-        })
+            "prev_hash": block.prev_hash,
+        }
+        for block in blockchain.chain
+    ]
+    return jsonify(
+        {
+            "status_code": 200,
+            "result": "BLOCKCHAIN_READY",
+            "is_valid": blockchain.is_chain_valid(),
+            "length": len(chain_data),
+            "chain": chain_data,
+        }
+    )
 
-    return jsonify(chain_data)
+
+@app.route("/status", methods=["GET"])
+def system_status():
+    return jsonify(
+        {
+            "status_code": 200,
+            "result": "SYSTEM_READY",
+            "users_in_memory": sorted(users_secret.keys()),
+            "active_challenges": challenges,
+            "blockchain_valid": blockchain.is_chain_valid(),
+            "blockchain_length": len(blockchain.chain),
+        }
+    )
 
 
-# -----------------------------
-# RUN SERVER
-# -----------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

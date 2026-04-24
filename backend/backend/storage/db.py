@@ -1,6 +1,7 @@
 import sqlite3
+from pathlib import Path
 
-DB_NAME = "storage/users.db"
+DB_NAME = Path(__file__).resolve().parent / "users.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)

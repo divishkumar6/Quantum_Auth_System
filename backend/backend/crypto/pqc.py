@@ -1,24 +1,35 @@
 import hashlib
+import hmac
 import secrets
 
+
 class PQC:
+    @staticmethod
+    def sha256_hex(value):
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def derive_public_key(secret_key):
+        return PQC.sha256_hex(secret_key)
 
     @staticmethod
     def generate_keys():
-        # Generate a random secret key
         secret_key = secrets.token_hex(32)
-        # Public key is SHA256 of secret key
-        public_key = hashlib.sha256(secret_key.encode()).hexdigest()
+        public_key = PQC.derive_public_key(secret_key)
         return public_key, secret_key
 
     @staticmethod
     def sign(message, secret_key):
-        # Signature is SHA256(message + secret_key)
-        return hashlib.sha256((message + secret_key).encode()).hexdigest()
+        return PQC.sha256_hex(f"{message}{secret_key}")
 
     @staticmethod
-    def verify(message, signature, public_key):
-        # This method is kept for compatibility but verification
-        # should be done using stored secret_key in app.py
-        # Return False as we can't verify without secret_key
-        return False
+    def verify(message, signature, secret_key=None, public_key=None):
+        if not secret_key or not public_key:
+            return False
+
+        derived_public_key = PQC.derive_public_key(secret_key)
+        if derived_public_key != public_key:
+            return False
+
+        expected_signature = PQC.sign(message, secret_key)
+        return hmac.compare_digest(signature or "", expected_signature)
