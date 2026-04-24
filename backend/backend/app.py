@@ -1,19 +1,38 @@
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import os
+from flask_socketio import SocketIO
 
 try:
     from backend.blockchain.chain import Blockchain
     from backend.crypto.pqc import PQC
+    from backend.socket_events import (
+        configure_socket_events,
+        emit_auth_failed,
+        emit_auth_success,
+        emit_challenge,
+        emit_key_generated,
+        emit_signature,
+    )
     from backend.storage.db import add_user, get_user, init_db
 except ImportError:
     from blockchain.chain import Blockchain
     from crypto.pqc import PQC
+    from socket_events import (
+        configure_socket_events,
+        emit_auth_failed,
+        emit_auth_success,
+        emit_challenge,
+        emit_key_generated,
+        emit_signature,
+    )
     from storage.db import add_user, get_user, init_db
 
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+configure_socket_events(socketio)
 
 blockchain = Blockchain()
 challenges = {}
@@ -66,16 +85,16 @@ def register():
     data = request.get_json(silent=True) or {}
     username = normalize_username(data.get("username"))
     name = (data.get("name") or "").strip()
-    gender = (data.get("gender") or "").strip()
-    mobile = (data.get("mobile") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
 
     missing = [
         field
         for field, value in {
             "username": username,
             "name": name,
-            "gender": gender,
-            "mobile": mobile,
+            "email": email,
+            "phone": phone,
         }.items()
         if not value
     ]
@@ -111,7 +130,7 @@ def register():
 
     public_key, secret_key = PQC.generate_keys()
 
-    if not add_user(username, name, gender, mobile):
+    if not add_user(username, name, email, phone, public_key):
         status_code = 500
         return (
             jsonify(
@@ -129,6 +148,7 @@ def register():
     blockchain.add_block({"username": username, "public_key": public_key})
     users_secret[username] = secret_key
     challenges.pop(username, None)
+    emit_key_generated(username, public_key, secret_key)
 
     status_code = 201
     return (
@@ -193,8 +213,9 @@ def login():
             status_code,
         )
 
-    challenge = os.urandom(16).hex()
+    challenge = PQC.generate_challenge()
     challenges[username] = challenge
+    emit_challenge(username, challenge)
 
     status_code = 200
     return (
@@ -221,6 +242,7 @@ def verify_user():
 
     if not username:
         status_code = 400
+        emit_auth_failed(username or "unknown", "Username required")
         return (
             jsonify(
                 response_payload(
@@ -235,6 +257,7 @@ def verify_user():
 
     if not get_user(username):
         status_code = 404
+        emit_auth_failed(username, "User not found")
         return (
             jsonify(
                 response_payload(
@@ -251,6 +274,7 @@ def verify_user():
     public_key = get_public_key_from_chain(username)
     if not public_key:
         status_code = 404
+        emit_auth_failed(username, "Public key not found on blockchain")
         return (
             jsonify(
                 response_payload(
@@ -267,6 +291,7 @@ def verify_user():
     challenge = challenges.get(username)
     if not challenge:
         status_code = 400
+        emit_auth_failed(username, "Challenge expired or not found")
         return (
             jsonify(
                 response_payload(
@@ -281,10 +306,13 @@ def verify_user():
             status_code,
         )
 
+    emit_signature(username, challenge, signature)
+
     stored_secret_key = users_secret.get(username)
     if not stored_secret_key:
         challenges.pop(username, None)
         status_code = 409
+        emit_auth_failed(username, "Secret key not found in memory. Please register again.")
         return (
             jsonify(
                 response_payload(
@@ -303,6 +331,7 @@ def verify_user():
     if message != challenge:
         challenges.pop(username, None)
         status_code = 400
+        emit_auth_failed(username, "Tampered message detected")
         return (
             jsonify(
                 response_payload(
@@ -322,6 +351,7 @@ def verify_user():
     if derived_public_key != public_key:
         challenges.pop(username, None)
         status_code = 409
+        emit_auth_failed(username, "Stored secret key does not match blockchain public key")
         return (
             jsonify(
                 response_payload(
@@ -349,6 +379,7 @@ def verify_user():
 
     if is_valid:
         status_code = 200
+        emit_auth_success(username)
         return (
             jsonify(
                 response_payload(
@@ -366,6 +397,7 @@ def verify_user():
         )
 
     status_code = 401
+    emit_auth_failed(username, "Authentication failed")
     return (
         jsonify(
             response_payload(
@@ -421,4 +453,4 @@ def system_status():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000)

@@ -19,6 +19,10 @@ class PQC:
         return public_key, secret_key
 
     @staticmethod
+    def generate_challenge():
+        return secrets.token_hex(16)
+
+    @staticmethod
     def sign(message, secret_key):
         return PQC.sha256_hex(f"{message}{secret_key}")
 

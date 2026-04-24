@@ -1,5 +1,5 @@
 (function () {
-    const AUTH_API_BASE = window.AUTH_API_BASE || "http://127.0.0.1:5001";
+    const BACKEND_URL = window.BACKEND_URL || "http://127.0.0.1:5000";
     const AUTH_STORAGE_KEY = "quantumpay_auth_user";
     const DEVICE_CREDENTIALS_KEY = "quantumpay_device_credentials";
 
@@ -74,7 +74,7 @@
     function friendlyError(error) {
         const message = (error && error.message) || "Unknown error";
         if (message === "Failed to fetch" || message.includes("NetworkError")) {
-            return "QuantumPay backend is offline. Start the Flask server on http://127.0.0.1:5001 and try again.";
+            return `QuantumPay backend is offline. Start the Flask server on ${BACKEND_URL} and try again.`;
         }
         return message;
     }
@@ -102,9 +102,8 @@
         if (!badge) {
             return;
         }
-
         try {
-            const response = await fetch(`${AUTH_API_BASE}/status`, { method: "GET" });
+            const response = await fetch(`${BACKEND_URL}/status`, { method: "GET" });
             if (!response.ok) {
                 throw new Error("Offline");
             }
@@ -112,7 +111,7 @@
             badge.classList.add("is-online");
             badge.classList.remove("is-offline");
         } catch (error) {
-            badge.textContent = "Backend offline. Start the Flask app at http://127.0.0.1:5001 before registering or logging in.";
+            badge.textContent = `Backend offline. Start the Flask app at ${BACKEND_URL} before registering or logging in.`;
             badge.classList.add("is-offline");
             badge.classList.remove("is-online");
         }
@@ -157,7 +156,6 @@
             setMessage(messageEl, "Please complete all registration fields.", "error");
             return;
         }
-
         if (!validateEmail(email)) {
             setMessage(messageEl, "Enter a valid email address.", "error");
             return;
@@ -167,7 +165,7 @@
         setMessage(messageEl, "Creating your account and enrolling this browser...", "");
 
         try {
-            const registerResponse = await postJson(`${AUTH_API_BASE}/register`, {
+            const registerResponse = await postJson(`${BACKEND_URL}/register`, {
                 username,
                 name,
                 email,
@@ -181,7 +179,12 @@
             saveCredential(username, registerResponse.secret_key);
             sessionStorage.setItem(AUTH_STORAGE_KEY, username);
             event.target.reset();
-            setMessage(messageEl, "Registration successful. This device is now enrolled for secure sign-in.", "success");
+
+            const emailDelivery = registerResponse.email_delivery;
+            const emailSuffix = emailDelivery && !emailDelivery.sent
+                ? ` Account created, but email delivery needs attention: ${emailDelivery.reason}`
+                : " Account created and secret key email processing completed.";
+            setMessage(messageEl, `Registration successful.${emailSuffix}`, "success");
         } catch (error) {
             setMessage(messageEl, friendlyError(error), "error");
         } finally {
@@ -211,14 +214,14 @@
         setMessage(messageEl, "Requesting challenge and signing with your device credential...", "");
 
         try {
-            const loginResponse = await postJson(`${AUTH_API_BASE}/login`, { username });
+            const loginResponse = await postJson(`${BACKEND_URL}/login`, { username });
             const challenge = loginResponse.challenge;
             if (!challenge) {
                 throw new Error("No challenge returned by the backend.");
             }
 
             const signature = sha256(`${challenge}${secretKey}`);
-            const verifyResponse = await postJson(`${AUTH_API_BASE}/verify`, {
+            const verifyResponse = await postJson(`${BACKEND_URL}/verify`, {
                 username,
                 message: challenge,
                 signature
@@ -260,12 +263,10 @@
             navigateWithTransition("./login.html");
             return;
         }
-
         const welcome = $("welcomeUser");
         if (welcome) {
             welcome.textContent = `Authenticated as ${currentUser}`;
         }
-
         const logoutButton = $("logoutButton");
         if (logoutButton) {
             logoutButton.addEventListener("click", function () {
@@ -278,7 +279,6 @@
     function init() {
         wirePageTransitions();
         checkBackendStatus();
-
         const page = document.body.dataset.page;
         if (page === "register") {
             initRegister();

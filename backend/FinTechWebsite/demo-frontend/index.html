@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumPay Demo Monitor</title>
+    <link rel="stylesheet" href="./demo.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="demo-shell">
+        <header class="demo-header">
+            <div>
+                <span class="eyebrow">Real-Time Security Visualization</span>
+                <h1>QuantumPay Demo Monitor</h1>
+                <p>Watch registration, challenge creation, signature generation, and verification flow across the system in real time.</p>
+            </div>
+            <div class="connection-pill" id="connectionState">Connecting...</div>
+        </header>
+
+        <main class="demo-grid">
+            <section class="demo-card">
+                <h2>Key Generation</h2>
+                <div class="typing-panel" id="keyPanel">Waiting for key generation...</div>
+            </section>
+
+            <section class="demo-card">
+                <h2>Challenge</h2>
+                <div class="typing-panel" id="challengePanel">Waiting for challenge...</div>
+            </section>
+
+            <section class="demo-card">
+                <h2>Signature</h2>
+                <div class="typing-panel" id="signaturePanel">Waiting for signature...</div>
+            </section>
+
+            <section class="demo-card result-card" id="resultCard">
+                <h2>Result</h2>
+                <div class="typing-panel" id="resultPanel">Waiting for verification result...</div>
+            </section>
+
+            <section class="demo-card timeline-card">
+                <h2>Live Timeline</h2>
+                <div class="timeline" id="timeline"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="./demo.js"></script>
+</body>
+</html>
