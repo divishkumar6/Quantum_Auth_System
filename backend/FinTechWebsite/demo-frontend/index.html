@@ -18,6 +18,25 @@
             <div class="connection-pill" id="connectionState">Connecting...</div>
         </header>
 
+        <section class="demo-overview">
+            <article class="overview-card">
+                <span>Current user</span>
+                <strong id="activeUser">Waiting for activity</strong>
+            </article>
+            <article class="overview-card">
+                <span>Latest event</span>
+                <strong id="latestEvent">Socket boot</strong>
+            </article>
+            <article class="overview-card">
+                <span>Total events</span>
+                <strong id="eventCount">0</strong>
+            </article>
+            <article class="overview-card">
+                <span>Connection mode</span>
+                <strong id="transportState">Negotiating</strong>
+            </article>
+        </section>
+
         <main class="demo-grid">
             <section class="demo-card">
                 <h2>Key Generation</h2>
@@ -45,7 +64,7 @@
             </section>
         </main>
     </div>
-
+    <script src="./config.js"></script>
     <script src="./demo.js"></script>
 </body>
 </html>

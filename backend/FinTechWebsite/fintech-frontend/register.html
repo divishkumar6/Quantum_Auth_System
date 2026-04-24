@@ -35,6 +35,21 @@
                     <p class="lead">A polished onboarding flow inspired by modern Indian fintech apps, with trusted-device sign-in and secure identity verification.</p>
                 </div>
 
+                <div class="auth-steps" aria-label="Registration steps">
+                    <div class="auth-step is-active">
+                        <strong>1</strong>
+                        <span>Profile</span>
+                    </div>
+                    <div class="auth-step">
+                        <strong>2</strong>
+                        <span>Device key</span>
+                    </div>
+                    <div class="auth-step">
+                        <strong>3</strong>
+                        <span>Live sync</span>
+                    </div>
+                </div>
+
                 <div class="backend-status" id="backendStatus" aria-live="polite">Checking backend connection...</div>
 
                 <form id="registerForm" class="auth-form" novalidate>
@@ -69,7 +84,7 @@
             </section>
         </main>
     </div>
-
+    <script src="./config.js"></script>
     <script src="./app.js"></script>
 </body>
 </html>

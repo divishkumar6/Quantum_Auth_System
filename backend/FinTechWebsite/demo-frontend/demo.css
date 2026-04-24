@@ -15,12 +15,35 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
+    overflow-x: hidden;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text);
     background:
         radial-gradient(circle at top left, rgba(183, 148, 244, 0.18), transparent 24%),
         radial-gradient(circle at bottom right, rgba(95, 37, 159, 0.24), transparent 28%),
         linear-gradient(160deg, var(--bg) 0%, var(--bg-2) 45%, #040308 100%);
+}
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    inset: auto;
+    width: 34vw;
+    height: 34vw;
+    border-radius: 50%;
+    filter: blur(85px);
+    opacity: 0.24;
+    pointer-events: none;
+}
+body::before {
+    top: -10vw;
+    left: -8vw;
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.26), transparent 64%);
+}
+body::after {
+    right: -10vw;
+    bottom: -12vw;
+    background: radial-gradient(circle, rgba(95, 37, 159, 0.3), transparent 66%);
 }
 
 .demo-shell {
@@ -59,6 +82,37 @@ body {
     line-height: 1.7;
 }
 
+.demo-overview {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.overview-card {
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: rgba(31, 16, 58, 0.68);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+}
+
+.overview-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.overview-card strong {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(1rem, 2.2vw, 1.2rem);
+    line-height: 1.35;
+}
+
 .connection-pill {
     min-width: 180px;
     padding: 12px 16px;
@@ -92,6 +146,13 @@ body {
     box-shadow: var(--shadow);
     backdrop-filter: blur(18px);
     padding: 22px;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.demo-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(183, 148, 244, 0.36);
+    box-shadow: 0 16px 38px rgba(15, 4, 26, 0.42);
 }
 
 .demo-card h2 {
@@ -135,6 +196,7 @@ body {
     border: 1px solid var(--line);
     border-radius: 18px;
     background: rgba(10, 6, 18, 0.5);
+    animation: timelineIn 0.35s ease;
 }
 
 .timeline-item strong {
@@ -148,6 +210,10 @@ body {
 }
 
 @media (max-width: 1080px) {
+    .demo-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .demo-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -162,7 +228,23 @@ body {
         flex-direction: column;
     }
 
+    .demo-overview,
     .demo-grid {
         grid-template-columns: 1fr;
+    }
+
+    .connection-pill {
+        width: 100%;
+    }
+}
+
+@keyframes timelineIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

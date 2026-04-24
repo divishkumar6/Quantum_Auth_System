@@ -36,6 +36,21 @@
                     <p class="lead">QuantumPay signs the backend challenge inside this browser using your trusted local credential, while the demo site visualizes the whole security flow in real time.</p>
                 </div>
 
+                <div class="auth-steps" aria-label="Authentication steps">
+                    <div class="auth-step is-active">
+                        <strong>1</strong>
+                        <span>Challenge</span>
+                    </div>
+                    <div class="auth-step">
+                        <strong>2</strong>
+                        <span>Sign</span>
+                    </div>
+                    <div class="auth-step">
+                        <strong>3</strong>
+                        <span>Verify</span>
+                    </div>
+                </div>
+
                 <div class="backend-status" id="backendStatus" aria-live="polite">Checking backend connection...</div>
 
                 <form id="loginForm" class="auth-form" novalidate>
@@ -58,7 +73,7 @@
             </section>
         </main>
     </div>
-
+    <script src="./config.js"></script>
     <script src="./app.js"></script>
 </body>
 </html>
