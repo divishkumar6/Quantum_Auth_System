@@ -5,15 +5,18 @@ from crypto_utils import generate_keys, sign_message, verify_signature
 
 app = Flask(__name__)
 
-# 🔥 Store one-time challenges
+# 🔐 Store one-time challenges (replay protection)
 challenges = {}
 
 # Load users
 def load_users():
     if not os.path.exists("users.json"):
         return {}
-    with open("users.json", "r") as f:
-        return json.load(f)
+    try:
+        with open("users.json", "r") as f:
+            return json.load(f)
+    except:
+        return {}
 
 def save_users(users):
     with open("users.json", "w") as f:
@@ -23,10 +26,10 @@ def save_users(users):
 def home():
     return render_template("index.html")
 
-# REGISTER
+# ================= REGISTER =================
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.json
+    data = request.get_json()
     username = data.get('username')
 
     if not username:
@@ -48,14 +51,14 @@ def register():
 
     return jsonify({
         "status": "success",
-        "message": "✅ User Registered",
-        "public_key": public_key
+        "message": "✅ User Registered"
     })
 
-# LOGIN → Generate challenge
+
+# ================= LOGIN =================
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
+    data = request.get_json()
     username = data.get('username')
 
     users = load_users()
@@ -63,9 +66,10 @@ def login():
     if username not in users:
         return jsonify({"error": "User not found"}), 404
 
+    # 🔥 Generate one-time challenge
     challenge = os.urandom(16).hex()
 
-    # 🔥 Save challenge for replay protection
+    # 🔥 Store challenge (important)
     challenges[username] = challenge
 
     return jsonify({
@@ -73,10 +77,11 @@ def login():
         "challenge": challenge
     })
 
-# VERIFY → Check signature + replay attack
+
+# ================= VERIFY =================
 @app.route('/verify', methods=['POST'])
 def verify():
-    data = request.json
+    data = request.get_json()
     username = data.get('username')
     message = data.get('message')
 
@@ -103,10 +108,10 @@ def verify():
             "status": "success",
             "message": "✅ Login Successful"
         })
-    else:
-        return jsonify({"error": "❌ Verification Failed"}), 401
+
+    return jsonify({"error": "❌ Verification Failed"}), 401
 
 
-# RUN SERVER
+# ================= RUN =================
 if __name__ == '__main__':
     app.run(debug=True)
