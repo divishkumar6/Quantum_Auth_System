@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PQC Auth Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+        }
+
+        input, button {
+            margin: 5px;
+            padding: 8px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .box {
+            border: 1px solid #444;
+            padding: 10px;
+            margin-top: 10px;
+            background: #1e293b;
+        }
+
+        pre {
+            color: #22c55e;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🔐 PQC Auth Debug Panel</h1>
+
+<div class="box">
+    <h3>Register</h3>
+    <input id="username" placeholder="username">
+    <input id="name" placeholder="name">
+    <input id="gender" placeholder="gender">
+    <input id="mobile" placeholder="mobile">
+    <button onclick="register()">Register</button>
+</div>
+
+<div class="box">
+    <h3>Login</h3>
+    <input id="loginUser" placeholder="username">
+    <button onclick="login()">Login</button>
+</div>
+
+<div class="box">
+    <h3>Actions</h3>
+    <button onclick="verify()">Verify</button>
+    <button onclick="replayAttack()">Replay Attack</button>
+</div>
+
+<div class="box">
+    <h3>Live Debug Output</h3>
+    <pre id="output"></pre>
+</div>
+
+<script>
+
+let challenge = "";
+let secret_key = "";
+let lastSignature = "";
+
+// REGISTER
+async function register() {
+    let res = await fetch("http://127.0.0.1:5000/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: username.value,
+            name: name.value,
+            gender: gender.value,
+            mobile: mobile.value
+        })
+    });
+
+    let data = await res.json();
+
+    if (data.secret_key) {
+        secret_key = data.secret_key;
+    }
+
+    output.innerText = "REGISTER:\n" + JSON.stringify(data, null, 2);
+}
+
+// LOGIN
+async function login() {
+    let res = await fetch("http://127.0.0.1:5000/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: loginUser.value
+        })
+    });
+
+    let data = await res.json();
+
+    challenge = data.challenge;
+
+    output.innerText = "LOGIN:\n" + JSON.stringify(data, null, 2);
+}
+
+// SIGN
+function signChallenge(challenge, secret_key) {
+    return CryptoJS.SHA256(challenge + secret_key).toString();
+}
+
+// VERIFY
+async function verify() {
+
+    let signature = signChallenge(challenge, secret_key);
+    lastSignature = signature;
+
+    let res = await fetch("http://127.0.0.1:5000/verify", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: loginUser.value,
+            message: challenge,
+            signature: signature
+        })
+    });
+
+    let data = await res.json();
+
+    output.innerText = "VERIFY:\n" + JSON.stringify(data, null, 2);
+}
+
+// REPLAY ATTACK
+async function replayAttack() {
+
+    await verify();
+
+    let res = await fetch("http://127.0.0.1:5000/verify", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: loginUser.value,
+            message: challenge,
+            signature: lastSignature
+        })
+    });
+
+    let data = await res.json();
+
+    output.innerText = "REPLAY ATTACK:\n" + JSON.stringify(data, null, 2);
+}
+
+</script>
+
+</body>
+</html>
