@@ -1,0 +1,180 @@
+# Master Error Log 🧠
+
+This file documents all major errors encountered during development and their fixes.
+
+---
+
+## ❌ 1. pqcrypto Import Error
+
+### Error:
+
+ImportError: cannot import name 'dilithium2'
+
+### Cause:
+
+Incorrect module name or missing algorithm support.
+
+### Fix:
+
+Switched to supported algorithms or alternative libraries.
+
+---
+
+## ❌ 2. pqcrypto Algorithms Not Found
+
+### Error:
+
+ModuleNotFoundError: pqcrypto.sign.sphincs...
+
+### Cause:
+
+pqcrypto installation incomplete (common in Windows).
+
+### Fix:
+
+Abandoned pqcrypto for hackathon stability.
+
+---
+
+## ❌ 3. Falcon Key Length Error
+
+### Error:
+
+'secret_key' must be of length '1281'
+
+### Cause:
+
+Key corruption due to:
+
+* improper storage
+* encoding/decoding issues
+
+### Fix:
+
+Stopped using Falcon due to instability.
+
+---
+
+## ❌ 4. UnboundLocalError
+
+### Error:
+
+local variable 'secret_key' referenced before assignment
+
+### Cause:
+
+Variable used before initialization.
+
+### Fix:
+
+Moved key generation before usage.
+
+---
+
+## ❌ 5. User Not Found
+
+### Error:
+
+{
+"error": "User not found"
+}
+
+### Cause:
+
+* Server restarted (memory cleared)
+* User not registered
+
+### Fix:
+
+Re-register user after restart.
+
+---
+
+## ❌ 6. User Already Exists
+
+### Error:
+
+{
+"error": "User already exists"
+}
+
+### Cause:
+
+Duplicate registration attempt.
+
+### Fix:
+
+Use different username or skip register step.
+
+---
+
+## ❌ 7. 500 Internal Server Error
+
+### Cause:
+
+Unhandled exception in backend.
+
+### Fix:
+
+Added try-catch and debug logging.
+
+---
+
+## ❌ 8. Git Folder Not Showing
+
+### Cause:
+
+Empty folders are not tracked by Git.
+
+### Fix:
+
+Added `.gitkeep` or files inside folders.
+
+---
+
+## ❌ 9. Git Push Rejected
+
+### Error:
+
+rejected (fetch first)
+
+### Cause:
+
+Remote repo ahead of local.
+
+### Fix:
+
+git pull origin main --allow-unrelated-histories
+
+---
+
+## ❌ 10. Nested Git Repository Issue
+
+### Cause:
+
+Git repo initialized inside another repo.
+
+### Fix:
+
+Removed nested folder and restructured project.
+
+---
+
+## 🧠 Key Learnings
+
+* Always test libraries before using them
+* Cryptographic keys must not be altered
+* Use stable libraries in hackathons
+* Git workflow is critical for team projects
+
+---
+
+## 🚀 Recommendation
+
+For hackathon:
+
+* Prioritize working system
+* Avoid unstable dependencies
+* Focus on demo clarity
+
+---
