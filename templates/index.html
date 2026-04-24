@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Safe Login</title>
+
+    <style>
+    body {
+        font-family: Arial;
+        background: #f4f6f8;
+        padding: 40px;
+    }
+
+    input, button {
+        padding: 10px;
+        margin: 5px;
+    }
+
+    button {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    #output {
+        margin-top: 15px;
+        font-weight: bold;
+    }
+    </style>
+</head>
+
+<body>
+
+<h2>🔐 Quantum Safe Login</h2>
+
+<input id="username" placeholder="Enter Username">
+<br><br>
+
+<button onclick="register()">Register</button>
+<button onclick="login()">Login</button>
+
+<p id="output"></p>
+
+<script>
+
+// ✅ REGISTER FUNCTION (ADDED)
+async function register() {
+    document.getElementById("output").innerText = "";
+
+    let username = document.getElementById("username").value;
+
+    let res = await fetch('/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: username })
+    });
+
+    let data = await res.json();
+
+    if (data.error) {
+        document.getElementById("output").innerText = data.error;
+    } else {
+        document.getElementById("output").innerText = data.message;
+    }
+}
+
+
+// ✅ LOGIN FUNCTION (FIXED)
+async function login() {
+    document.getElementById("output").innerText = "";
+
+    let username = document.getElementById("username").value;
+
+    let res = await fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: username })
+    });
+
+    let data = await res.json();
+
+    // stop if user not found
+    if (data.error) {
+        document.getElementById("output").innerText = data.error;
+        return;
+    }
+
+    let challenge = data.challenge;
+
+    let verifyRes = await fetch('/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: username,
+            message: challenge
+        })
+    });
+
+    let result = await verifyRes.json();
+
+    document.getElementById("output").innerText =
+        result.message || result.error;
+}
+
+</script>
+
+</body>
+</html>
