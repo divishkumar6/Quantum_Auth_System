@@ -71,13 +71,22 @@
 </div>
 
 <script>
-
 let challenge = "";
 let secret_key = "";
 let lastSignature = "";
+let usernameValue = "";
+
+// Helper to show output
+function showOutput(title, data, isError = false) {
+    output.innerHTML = `<b>${title}:</b>\n<pre style='color:${isError ? '#f87171' : '#22c55e'}'>${JSON.stringify(data, null, 2)}</pre>`;
+}
 
 // REGISTER
 async function register() {
+    if (!username.value || !name.value || !gender.value || !mobile.value) {
+        showOutput('REGISTER ERROR', {error: 'All fields required'}, true);
+        return;
+    }
     let res = await fetch("http://127.0.0.1:5000/register", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -88,18 +97,20 @@ async function register() {
             mobile: mobile.value
         })
     });
-
     let data = await res.json();
-
     if (data.secret_key) {
         secret_key = data.secret_key;
+        usernameValue = username.value;
     }
-
-    output.innerText = "REGISTER:\n" + JSON.stringify(data, null, 2);
+    showOutput('REGISTER', data, !res.ok);
 }
 
 // LOGIN
 async function login() {
+    if (!loginUser.value) {
+        showOutput('LOGIN ERROR', {error: 'Username required'}, true);
+        return;
+    }
     let res = await fetch("http://127.0.0.1:5000/login", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -107,12 +118,10 @@ async function login() {
             username: loginUser.value
         })
     });
-
     let data = await res.json();
-
     challenge = data.challenge;
-
-    output.innerText = "LOGIN:\n" + JSON.stringify(data, null, 2);
+    usernameValue = loginUser.value;
+    showOutput('LOGIN', data, !res.ok);
 }
 
 // SIGN
@@ -122,45 +131,43 @@ function signChallenge(challenge, secret_key) {
 
 // VERIFY
 async function verify() {
-
+    if (!challenge || !secret_key || !usernameValue) {
+        showOutput('VERIFY ERROR', {error: 'Register, login, and get challenge first!'}, true);
+        return;
+    }
     let signature = signChallenge(challenge, secret_key);
     lastSignature = signature;
-
     let res = await fetch("http://127.0.0.1:5000/verify", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            username: loginUser.value,
+            username: usernameValue,
             message: challenge,
             signature: signature
         })
     });
-
     let data = await res.json();
-
-    output.innerText = "VERIFY:\n" + JSON.stringify(data, null, 2);
+    showOutput('VERIFY', data, !res.ok);
 }
 
 // REPLAY ATTACK
 async function replayAttack() {
-
-    await verify();
-
+    if (!challenge || !lastSignature || !usernameValue) {
+        showOutput('REPLAY ERROR', {error: 'Do a verify first!'}, true);
+        return;
+    }
     let res = await fetch("http://127.0.0.1:5000/verify", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            username: loginUser.value,
+            username: usernameValue,
             message: challenge,
             signature: lastSignature
         })
     });
-
     let data = await res.json();
-
-    output.innerText = "REPLAY ATTACK:\n" + JSON.stringify(data, null, 2);
+    showOutput('REPLAY ATTACK', data, !res.ok);
 }
-
 </script>
 
 </body>
