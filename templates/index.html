@@ -25,6 +25,7 @@
     #output {
         margin-top: 15px;
         font-weight: bold;
+        white-space: pre-line;
     }
     </style>
 </head>
@@ -38,54 +39,48 @@
 
 <button onclick="register()">Register</button>
 <button onclick="login()">Login</button>
+<button onclick="replayAttack()">Replay Attack</button>
 
 <p id="output"></p>
 
 <script>
 
-// ✅ REGISTER FUNCTION (ADDED)
-async function register() {
-    document.getElementById("output").innerText = "";
+let lastChallenge = "";
 
+// REGISTER
+async function register() {
     let username = document.getElementById("username").value;
 
     let res = await fetch('/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username: username })
+        body: JSON.stringify({ username })
     });
 
     let data = await res.json();
-
-    if (data.error) {
-        document.getElementById("output").innerText = data.error;
-    } else {
-        document.getElementById("output").innerText = data.message;
-    }
+    document.getElementById("output").innerText =
+        data.message || data.error;
 }
 
-
-// ✅ LOGIN FUNCTION (FIXED)
+// LOGIN
 async function login() {
-    document.getElementById("output").innerText = "";
-
     let username = document.getElementById("username").value;
 
     let res = await fetch('/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username: username })
+        body: JSON.stringify({ username })
     });
 
     let data = await res.json();
 
-    // stop if user not found
     if (data.error) {
         document.getElementById("output").innerText = data.error;
         return;
     }
 
     let challenge = data.challenge;
+    lastChallenge = challenge;
 
     let verifyRes = await fetch('/verify', {
         method: 'POST',
@@ -100,6 +95,31 @@ async function login() {
 
     document.getElementById("output").innerText =
         result.message || result.error;
+}
+
+// 🔥 REPLAY ATTACK
+async function replayAttack() {
+    let username = document.getElementById("username").value;
+
+    if (!lastChallenge) {
+        document.getElementById("output").innerText =
+            "⚠️ First perform login";
+        return;
+    }
+
+    let res = await fetch('/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: username,
+            message: lastChallenge
+        })
+    });
+
+    let data = await res.json();
+
+    document.getElementById("output").innerText =
+        "⚔️ Replay Attack: " + (data.error || data.message);
 }
 
 </script>
