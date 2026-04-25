@@ -137,6 +137,10 @@
             if (!baseUrl) {
                 return;
             }
+            if (/^https?:\/\//i.test(baseUrl)) {
+                link.href = baseUrl.replace(/\/$/, "");
+                return;
+            }
             link.href = `${baseUrl.replace(/\/$/, "")}/index.html`;
         });
     }
