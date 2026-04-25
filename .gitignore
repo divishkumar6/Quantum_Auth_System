@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+backend/storage/users.db
+*.zip

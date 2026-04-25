@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumPay Attack Lab</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <a class="brand" href="../index.html">
+                <span class="brand-mark">Q</span>
+                <span class="brand-copy">
+                    <strong>QuantumPay</strong>
+                    <small>Attack Simulation Lab</small>
+                </span>
+            </a>
+            <nav class="nav-links">
+                <a href="../fintech-frontend/index.html" data-site-link="fintech">FinTech Site</a>
+                <a href="../demo-frontend/index.html" data-site-link="demo">Realtime Demo</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div class="hero-copy">
+                    <span class="eyebrow">Threat Modeling Playground</span>
+                    <h1>Attack Simulation Lab</h1>
+                    <p class="lead">
+                        Explore how challenge-response authentication, single-use challenges, trusted-device storage,
+                        and blockchain-backed identity help resist common attacks.
+                    </p>
+                    <div class="status-row">
+                        <div class="status-card">
+                            <span>Mode</span>
+                            <strong id="scenarioTitle">Replay Attack</strong>
+                        </div>
+                        <div class="status-card">
+                            <span>Risk Level</span>
+                            <strong id="scenarioRisk">Medium</strong>
+                        </div>
+                        <div class="status-card">
+                            <span>Defense</span>
+                            <strong id="scenarioDefense">Single-use challenge</strong>
+                        </div>
+                    </div>
+                </div>
+                <aside class="hero-visual">
+                    <div class="pulse-grid" id="pulseGrid" aria-label="Scenario map">
+                        <button type="button" class="pulse-cell" data-cell="0"></button>
+                        <button type="button" class="pulse-cell" data-cell="1"></button>
+                        <button type="button" class="pulse-cell" data-cell="2"></button>
+                        <button type="button" class="pulse-cell" data-cell="3"></button>
+                        <button type="button" class="pulse-cell" data-cell="4"></button>
+                        <button type="button" class="pulse-cell" data-cell="5"></button>
+                        <button type="button" class="pulse-cell" data-cell="6"></button>
+                        <button type="button" class="pulse-cell" data-cell="7"></button>
+                        <button type="button" class="pulse-cell" data-cell="8"></button>
+                    </div>
+                    <p class="grid-caption" id="gridCaption">Select a scenario to see how the attacker path and defense points move through the system.</p>
+                    <p class="visual-note">Interactive scenarios explain what the attacker tries, what the system sees, and why the defense holds or where it needs improvement.</p>
+                </aside>
+            </section>
+
+            <section class="overview-grid">
+                <article class="panel-card">
+                    <span class="eyebrow">Problem Statement</span>
+                    <h2>Modern fintech products need security that people can trust and teams can explain clearly.</h2>
+                    <p>
+                        Authentication is often presented as a black box. This project turns the security flow into something visible,
+                        interactive, and deployable so the product story and the technical story can be demonstrated together.
+                    </p>
+                </article>
+                <article class="panel-card">
+                    <span class="eyebrow">Idea</span>
+                    <h2>Create one platform that combines product UX, backend observability, and security education.</h2>
+                    <p>
+                        QuantumPay connects a customer-facing fintech website, a realtime operational demo, and an attack lab so one
+                        project can showcase the business idea, the implementation logic, and the threat model.
+                    </p>
+                </article>
+            </section>
+
+            <section class="detail-grid">
+                <article class="panel-card">
+                    <span class="eyebrow">Solution</span>
+                    <h3>How QuantumPay solves the problem</h3>
+                    <ul class="info-list">
+                        <li>Registers users with a modern onboarding experience.</li>
+                        <li>Generates a per-user secret and derived public identity.</li>
+                        <li>Uses fresh challenges for every login attempt.</li>
+                        <li>Streams key events to a separate realtime monitoring website.</li>
+                    </ul>
+                </article>
+                <article class="panel-card">
+                    <span class="eyebrow">Outcome</span>
+                    <h3>What this platform demonstrates</h3>
+                    <ul class="info-list">
+                        <li>Fintech-oriented user experience.</li>
+                        <li>Visible backend security workflow.</li>
+                        <li>Attack-defense storytelling for demos and presentations.</li>
+                        <li>Deployment-ready separation between backend and static sites.</li>
+                    </ul>
+                </article>
+            </section>
+
+            <section class="stack-section">
+                <article class="panel-card">
+                    <span class="eyebrow">Tech Stack</span>
+                    <div class="stack-grid">
+                        <div class="stack-card">
+                            <span>Backend</span>
+                            <strong>Flask, Flask-CORS, Flask-SocketIO, eventlet</strong>
+                        </div>
+                        <div class="stack-card">
+                            <span>Storage</span>
+                            <strong>SQLite with blockchain-style identity tracking</strong>
+                        </div>
+                        <div class="stack-card">
+                            <span>Frontend</span>
+                            <strong>HTML, CSS, JavaScript, CryptoJS, Socket.IO CDN</strong>
+                        </div>
+                        <div class="stack-card">
+                            <span>Deployment</span>
+                            <strong>Render backend plus three separate Netlify sites</strong>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="scenario-layout">
+                <aside class="scenario-list" id="scenarioList">
+                    <button type="button" class="scenario-button is-active" data-scenario="replay">Replay Attack</button>
+                    <button type="button" class="scenario-button" data-scenario="tamper">Message Tampering</button>
+                    <button type="button" class="scenario-button" data-scenario="device">Device Theft</button>
+                    <button type="button" class="scenario-button" data-scenario="phishing">Credential Phishing</button>
+                    <button type="button" class="scenario-button" data-scenario="quantum">Quantum Threat Outlook</button>
+                </aside>
+
+                <section class="scenario-panel">
+                    <div class="scenario-toolbar panel-card">
+                        <div class="scenario-progress">
+                            <span>Scenario</span>
+                            <strong id="scenarioProgress">1 / 5</strong>
+                        </div>
+                        <div class="scenario-controls">
+                            <button type="button" class="toolbar-button" id="prevScenario">Previous</button>
+                            <button type="button" class="toolbar-button" id="nextScenario">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="panel-card">
+                        <h2>Attack Story</h2>
+                        <p id="scenarioSummary"></p>
+                    </div>
+
+                    <div class="panel-grid">
+                        <article class="panel-card">
+                            <h3>Attacker Moves</h3>
+                            <ul id="attackerMoves"></ul>
+                        </article>
+                        <article class="panel-card">
+                            <h3>System Response</h3>
+                            <ul id="systemResponse"></ul>
+                        </article>
+                    </div>
+
+                    <div class="panel-card">
+                        <h3>Simulation Timeline</h3>
+                        <div class="timeline" id="simulationTimeline"></div>
+                    </div>
+                </section>
+            </section>
+
+            <section class="detail-grid">
+                <article class="panel-card">
+                    <span class="eyebrow">Architecture</span>
+                    <h3>Three-website structure</h3>
+                    <ul class="info-list">
+                        <li>FinTech Company Website for customers.</li>
+                        <li>Realtime Backend Process Demo for live operations visibility.</li>
+                        <li>Attack Simulation Website for explaining threats and defenses.</li>
+                    </ul>
+                </article>
+                <article class="panel-card">
+                    <span class="eyebrow">Local Navigation</span>
+                    <h3>Why cross-site redirects failed before</h3>
+                    <p>
+                        Locally, the websites run on different ports, so relative links do not naturally jump between them.
+                        This project now supports configurable absolute URLs through site-link config files for local and deployed environments.
+                    </p>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="./site-links.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

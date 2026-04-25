@@ -2,11 +2,127 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=./backend/FinTechWebsite/fintech-frontend/index.html">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuantumPay Redirect</title>
+    <title>QuantumPay Platform Hub</title>
+    <style>
+        :root {
+            --bg-start: #060611;
+            --bg-end: #12051f;
+            --card: rgba(26, 18, 48, 0.72);
+            --line: rgba(196, 181, 253, 0.18);
+            --text: #f8fafc;
+            --muted: #ddd6fe;
+            --accent: #8b5cf6;
+            --accent-2: #22d3ee;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; min-height: 100%; }
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 25%),
+                radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.2), transparent 28%),
+                linear-gradient(160deg, var(--bg-start) 0%, #0c1326 45%, var(--bg-end) 100%);
+        }
+        .shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 32px 0 48px;
+        }
+        .hero {
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--line);
+            border-radius: 32px;
+            background: var(--card);
+            backdrop-filter: blur(18px);
+        }
+        .eyebrow {
+            display: inline-block;
+            color: var(--accent-2);
+            font-size: 0.8rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+        h1 {
+            margin: 0 0 14px;
+            font-size: clamp(2.8rem, 6vw, 5rem);
+            line-height: 0.96;
+        }
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            max-width: 760px;
+            line-height: 1.7;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+        .card {
+            display: grid;
+            gap: 18px;
+            padding: 24px;
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            background: var(--card);
+            text-decoration: none;
+            color: inherit;
+        }
+        .card h2 {
+            margin: 0;
+            font-size: 1.45rem;
+        }
+        .card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+        .pill {
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+        }
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-    <p>Redirecting to <a href="./backend/FinTechWebsite/fintech-frontend/index.html">QuantumPay</a>...</p>
+    <div class="shell">
+        <section class="hero">
+            <span class="eyebrow">QuantumPay Workspace</span>
+            <h1>Three clean websites. One backend flow.</h1>
+            <p>Select the customer fintech experience, the realtime backend demo, or the attack simulation lab. This root page is just a launch hub so deployment and local testing stay simple.</p>
+        </section>
+
+        <section class="grid">
+            <a class="card" href="./fintech-frontend/index.html">
+                <span class="pill">Customer Experience</span>
+                <h2>FinTech Company Website</h2>
+                <p>Registration, trusted-device login, and dashboard experience for QuantumPay customers.</p>
+            </a>
+            <a class="card" href="./demo-frontend/index.html">
+                <span class="pill">Operations View</span>
+                <h2>Realtime Backend Process Demo</h2>
+                <p>Live Socket.IO visualization of key generation, challenge creation, signature flow, and auth result.</p>
+            </a>
+            <a class="card" href="./attack-simulations/index.html">
+                <span class="pill">Security Education</span>
+                <h2>Attack Simulations</h2>
+                <p>Interactive scenarios showing replay attacks, tampering, phishing, device risk, and quantum migration context.</p>
+            </a>
+        </section>
+    </div>
 </body>
 </html>

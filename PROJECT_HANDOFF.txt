@@ -1,0 +1,328 @@
+QuantumPay Project Handoff
+==========================
+
+Project Overview
+----------------
+QuantumPay is a full-stack demonstration platform built around one backend service and three static websites:
+
+1. backend/
+   Flask + Flask-CORS + Flask-SocketIO backend
+   Handles registration, challenge generation, signature verification, SQLite persistence, blockchain-style identity logging, and realtime socket events
+
+2. fintech-frontend/
+   Customer-facing fintech product website
+   Handles registration, login, dashboard navigation, and trusted-device flow
+
+3. demo-frontend/
+   Realtime operational monitoring website
+   Displays key generation, challenge creation, signature generation, and authentication result in realtime through Socket.IO
+
+4. attack-simulations/
+   Security education and presentation website
+   Explains the project problem statement, idea, solution, architecture, tech stack, and interactive attack-defense scenarios
+
+
+Current Clean Project Structure
+------------------------------
+Quantum_Auth_System/
+  backend/
+  fintech-frontend/
+  demo-frontend/
+  attack-simulations/
+  README.md
+  DEPLOYMENT.md
+  PROJECT_HANDOFF.txt
+  .gitignore
+  index.html
+
+
+Core Idea
+---------
+The system demonstrates a challenge-response authentication model for a fintech-style platform.
+
+Flow:
+- User registers on the fintech frontend
+- Backend generates a secret key and public identity
+- Backend stores user profile data in SQLite
+- Backend stores the public identity in a blockchain-style log
+- Frontend stores the secret locally as a trusted-device credential
+- During login, backend issues a fresh challenge
+- Frontend signs the challenge using the stored local secret
+- Backend verifies the signature
+- Demo frontend receives realtime status events through Socket.IO
+
+
+Problem Statement
+-----------------
+Modern fintech products need:
+- better user trust
+- stronger security storytelling
+- observable backend workflows
+- deployable frontend/backend separation
+
+Most small demo systems fail because:
+- they are hard to deploy
+- they have duplicated folders and broken structure
+- the frontend/backend contract is inconsistent
+- realtime visualization is missing or disconnected
+- security concepts are not presented clearly for evaluators or demo audiences
+
+
+Solution Summary
+----------------
+This project solves that by combining:
+- one deployable backend
+- one fintech customer website
+- one realtime demo monitor
+- one attack simulation and project explanation website
+
+This lets the same codebase serve as:
+- a fintech product demo
+- a backend observability demo
+- a security presentation/demo
+- a deployment-ready student/project showcase
+
+
+Tech Stack
+----------
+Backend:
+- Flask
+- Flask-CORS
+- Flask-SocketIO
+- eventlet
+- SQLite
+- Gmail SMTP based email sending
+
+Frontend:
+- HTML
+- CSS
+- JavaScript
+- CryptoJS
+- Socket.IO CDN client
+
+Deployment:
+- Render for backend
+- Netlify for fintech frontend
+- Netlify for demo frontend
+- Netlify for attack simulations frontend
+
+
+Important Runtime Files
+-----------------------
+Backend:
+- backend/app.py
+- backend/socket_events.py
+- backend/storage/db.py
+- backend/crypto/pqc.py
+- backend/Procfile
+- backend/requirements.txt
+- backend/runtime.txt
+
+Frontends:
+- fintech-frontend/config.js
+- fintech-frontend/site-links.js
+- demo-frontend/config.js
+- demo-frontend/site-links.js
+- attack-simulations/site-links.js
+
+
+Production Config Notes
+-----------------------
+fintech-frontend/config.js
+- should point to the deployed Render backend URL
+
+demo-frontend/config.js
+- should point to the deployed Render backend URL
+
+site-links.js files
+- should point to the deployed Netlify URLs of the three websites
+
+Example:
+window.SITE_LINKS = {
+    fintech: "https://your-fintech-site.netlify.app",
+    demo: "https://your-demo-site.netlify.app",
+    attack: "https://your-attack-site.netlify.app"
+};
+
+
+Major Issues Faced During The Project
+-------------------------------------
+1. Directory listing instead of website
+Cause:
+- static server was started from the wrong folder
+- root index file was missing in some locations
+
+Fix:
+- added redirect/entry files temporarily
+- later restructured the repo so deployable sites live in clean top-level folders
+
+
+2. Backend/frontend field mismatch
+Cause:
+- frontend registration used name/email/phone
+- one backend version expected name/gender/mobile
+
+Fix:
+- kept the correct backend implementation
+- aligned registration contract to name/email/phone
+
+
+3. Realtime demo not updating
+Cause:
+- local launch was using a plain Flask backend variant without Socket.IO event emission
+
+Fix:
+- enabled Socket.IO on the active backend
+- ensured backend emits:
+  key_generated
+  challenge_created
+  signature_generated
+  auth_success
+  auth_failed
+
+
+4. Deploy failures and submodule-style Git error
+Cause:
+- repo contained a nested duplicate Quantum_Auth_System folder tracked like a gitlink
+- there were multiple duplicate backends/frontends
+- deploy platforms got confused by nested structure
+
+Fix:
+- flattened repo to one canonical backend and three canonical frontends
+- removed the broken nested tracked gitlink entry from Git
+- added .gitignore to keep noise out of deploys
+
+
+5. Cross-site navigation not working locally
+Cause:
+- three separate local sites were running on different ports
+- relative links do not automatically jump across servers on different ports
+
+Fix:
+- introduced site-links.js in all three sites
+- local links now use absolute URLs:
+  fintech -> 5500
+  demo -> 5600
+  attack -> 5700
+- same mechanism can be updated for deployed Netlify domains
+
+
+6. Attack simulation grid looked static
+Cause:
+- visual block was decorative only
+
+Fix:
+- turned it into a real scenario map
+- each scenario now updates:
+  labels
+  highlighted cells
+  attack/defense states
+  caption text
+  previous/next controls
+
+
+7. Local cleanup on Windows was hard
+Cause:
+- running Python processes locked folders
+- duplicate directories were in use while cleanup was happening
+
+Fix:
+- stopped running Python servers
+- copied canonical code into clean top-level folders
+- staged deletions and moves through Git
+
+
+How The Main Problems Were Solved
+---------------------------------
+- Chose FinTechWebsite implementation as canonical source
+- Moved canonical backend to top-level backend/
+- Moved canonical fintech frontend to top-level fintech-frontend/
+- Moved canonical demo frontend to top-level demo-frontend/
+- Created top-level attack-simulations/
+- Added root project hub index.html
+- Added deployment docs and handoff docs
+- Added local/deployed cross-site navigation config
+
+
+What To Test Before Final Deployment
+------------------------------------
+Local:
+- backend starts on 5000
+- fintech frontend opens on 5500
+- demo frontend opens on 5600
+- attack simulations opens on 5700
+- fintech registration works
+- demo updates live
+- attack scenarios switch correctly
+- cross-links between the three sites work
+
+Production:
+- backend on Render responds at /status
+- fintech Netlify site talks to Render backend
+- demo Netlify site connects to backend socket
+- attack site links correctly to the other two deployed sites
+
+
+Deployment Targets
+------------------
+Render:
+- backend/
+
+Netlify:
+- fintech-frontend/
+- demo-frontend/
+- attack-simulations/
+
+
+Known Limitations
+-----------------
+1. SQLite is local-file storage
+- On cloud platforms it may not be durable long-term across resets/redeploys
+- For a stronger production setup, move to Postgres or managed storage
+
+2. Trusted-device flow is demo-grade
+- Local stored secret is useful for demonstration
+- Production should add stronger device management, revocation, and possibly MFA
+
+3. Eventlet warning
+- eventlet currently works for this project
+- long term, consider moving to a more modern async/socket deployment path if required
+
+
+Recommended Next Improvements
+-----------------------------
+- move persistence from SQLite to Postgres
+- add admin/audit page
+- add device revocation controls
+- add stronger branding and custom domain deployment
+- add attack simulation charts or SVG flow diagrams
+- add automated deployment config files if desired
+
+
+Quick Start Commands
+--------------------
+Backend:
+cd backend
+python app.py
+
+Fintech frontend:
+cd fintech-frontend
+python -m http.server 5500
+
+Demo frontend:
+cd demo-frontend
+python -m http.server 5600
+
+Attack simulations:
+cd attack-simulations
+python -m http.server 5700
+
+
+Final Note
+----------
+This project is now structured as a much cleaner showcase-ready system:
+- one backend
+- three websites
+- realtime event visibility
+- security explanation layer
+- deployment-ready separation
